@@ -11,7 +11,7 @@ pipeline {
 
     // ── Change these two values to match your Docker Hub username ──────
     environment {
-        DOCKERHUB_USER = "your-dockerhub-username"       // ← CHANGE THIS
+        DOCKERHUB_USER = "harishdocker2004"       // ← CHANGE THIS
         IMAGE_TAG      = "${env.BUILD_NUMBER}"
     }
 

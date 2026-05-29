@@ -2,44 +2,75 @@ services:
 
   mysql:
     image: mysql:8
+    container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: mypassword
       MYSQL_DATABASE: testdb
     ports:
       - "3307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
     networks:
-      - swarm-network
+      - compose-network
+    volumes:
+      - mysql-data:/var/lib/mysql
 
   eureka-server:
-    image: microservice-eureka-server
+    image: microservice-eureka-server:latest
+    container_name: eureka-server-app
     build:
       context: ./Eureka-Server
     ports:
       - "8761:8761"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
     networks:
-      - swarm-network
+      - compose-network
+    depends_on:
+      - mysql
 
   api-gateway:
-    image: microservice-api-gateway
+    image: microservice-api-gateway:latest
+    container_name: api-gateway-app
     build:
       context: ./API-Gateway
     ports:
       - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_started
     networks:
-      - swarm-network
+      - compose-network
 
   backend:
-    image: microservice-backend
+    image: microservice-backend:latest
+    container_name: backend-service-app
     build:
       context: ./Backend-Service
+    ports:
+      - "8081:8081"
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/testdb?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=mypassword
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
     depends_on:
-      - mysql
-      - eureka-server
+      mysql:
+        condition: service_healthy
+      eureka-server:
+        condition: service_started
     networks:
-      - swarm-network
+      - compose-network
 
 networks:
-  swarm-network:
+  compose-network:
     driver: bridge
+
+volumes:
+  mysql-data:

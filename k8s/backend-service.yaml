@@ -1,0 +1,38 @@
+# ── k8s/backend-service.yaml ──────────────────────────────────────────
+# Place in:  k8s/backend-service.yaml  (project root)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-service
+  template:
+    metadata:
+      labels:
+        app: backend-service
+    spec:
+      containers:
+        - name: backend-service
+          image: your-dockerhub-username/backend-service:IMAGE_TAG_PLACEHOLDER
+          ports:
+            - containerPort: 8081
+          env:
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: http://eureka-server:8761/eureka/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+spec:
+  type: NodePort
+  selector:
+    app: backend-service
+  ports:
+    - port: 8081
+      targetPort: 8081
+      nodePort: 30081

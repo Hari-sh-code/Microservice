@@ -1,0 +1,45 @@
+services:
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: mypassword
+      MYSQL_DATABASE: testdb
+    ports:
+      - "3307:3306"
+    networks:
+      - swarm-network
+
+  eureka-server:
+    image: microservice-eureka-server
+    build:
+      context: ./Eureka-Server
+    ports:
+      - "8761:8761"
+    networks:
+      - swarm-network
+
+  api-gateway:
+    image: microservice-api-gateway
+    build:
+      context: ./API-Gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - swarm-network
+
+  backend:
+    image: microservice-backend
+    build:
+      context: ./Backend-Service
+    depends_on:
+      - mysql
+      - eureka-server
+    networks:
+      - swarm-network
+
+networks:
+  swarm-network:
+    driver: bridge
